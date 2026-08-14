@@ -258,11 +258,45 @@
   </div>
 
   <div class="grupo">
-    <div class="grupo-titulo">Financeiro</div>
+    <div class="grupo-titulo">Controle de Exaustão</div>
     <div class="grid">
+      <div class="card" style="--accent-color:var(--blue)">
+        <div class="card-label">Lojas com condição de limpeza Ótima</div>
+        <div class="flap-row" id="lojasCondOtimo"></div>
+      </div>
+      <div class="card" style="--accent-color:var(--blue)">
+        <div class="card-label">Lojas com condição de limpeza Satisfatória</div>
+        <div class="flap-row" id="lojasCondSatisfatorio"></div>
+      </div>
+      <div class="card" style="--accent-color:var(--yellow)">
+        <div class="card-label">Lojas com condição de limpeza Regular</div>
+        <div class="flap-row" id="lojasCondRegular"></div>
+      </div>
       <div class="card" style="--accent-color:var(--red)">
-        <div class="card-label">Autorizações de pagamento MKT quitadas no mês</div>
-        <div class="flap-row" id="autorizacoesPagas"></div>
+        <div class="card-label">Lojas com condição de limpeza Não Satisfatória</div>
+        <div class="flap-row" id="lojasCondNaoSatisfatorio"></div>
+      </div>
+      <div class="card" style="--accent-color:var(--blue)">
+        <div class="card-label">Soma da velocidade de exaustão no filtro (mês)</div>
+        <div class="flap-row" id="somaVelocidadeExaustaoFiltro"></div>
+      </div>
+      <div class="card" style="--accent-color:var(--blue)">
+        <div class="card-label">Média da velocidade de exaustão no filtro (mês)</div>
+        <div class="flap-row" id="mediaVelocidadeExaustaoFiltro"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grupo">
+    <div class="grupo-titulo">Marketing</div>
+    <div class="grid">
+      <div class="card" style="--accent-color:var(--yellow)">
+        <div class="card-label">Campanhas em andamento</div>
+        <div class="flap-row" id="campanhasEmAndamento"></div>
+      </div>
+      <div class="card" style="--accent-color:var(--blue)">
+        <div class="card-label">Campanhas concluídas no ano</div>
+        <div class="flap-row" id="campanhasConcluidasAno"></div>
       </div>
     </div>
   </div>
@@ -279,7 +313,9 @@
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMvnsb37M2hi4f3wS2egsFUYMzvnVy1Cfed8mIFiJV5LgXP17MczVdnDRINR1K6zn3/exec";
 
   const UNIDADES = {
-    tempoMedioAtendimentoDias: "dias"
+    tempoMedioAtendimentoDias: "dias",
+    somaVelocidadeExaustaoFiltro: "m/s",
+    mediaVelocidadeExaustaoFiltro: "m/s"
   };
 
   function renderFlap(elementId, valor, atraso) {
@@ -315,7 +351,10 @@
       const campos = [
         "osTercerizadosConcluidas", "osInternasConcluidas", "tempoMedioAtendimentoDias",
         "aceitesEPI", "notificacoesEnviadas", "ocorrenciasRegistradas",
-        "carteirinhasFeitas", "lojasAtivas", "autorizacoesPagas"
+        "carteirinhasFeitas", "lojasAtivas",
+        "lojasCondOtimo", "lojasCondSatisfatorio", "lojasCondRegular", "lojasCondNaoSatisfatorio",
+        "somaVelocidadeExaustaoFiltro", "mediaVelocidadeExaustaoFiltro",
+        "campanhasEmAndamento", "campanhasConcluidasAno"
       ];
 
       campos.forEach((campo, i) => {
