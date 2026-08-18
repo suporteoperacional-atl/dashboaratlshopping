@@ -69,6 +69,25 @@
     border-radius:20px;
   }
   .dot{ width:7px; height:7px; border-radius:50%; background:var(--red); box-shadow:0 0 0 3px var(--red-soft); }
+  .dot.ok{ background:var(--blue); box-shadow:0 0 0 3px var(--blue-soft); }
+
+  #btnAtualizar{
+    display:flex; align-items:center; justify-content:center;
+    width:22px; height:22px;
+    border:none; background:transparent;
+    color:var(--muted);
+    cursor:pointer;
+    padding:0;
+    margin-left:2px;
+    border-radius:50%;
+    transition:color 0.15s ease, background 0.15s ease;
+  }
+  #btnAtualizar:hover{ color:var(--blue); background:var(--blue-soft); }
+  #btnAtualizar.girando svg{ animation:girar 0.8s linear infinite; }
+  @keyframes girar{
+    from{ transform:rotate(0deg); }
+    to{ transform:rotate(360deg); }
+  }
 
   .faixa{
     max-width:1180px; margin:0 auto 36px;
@@ -197,6 +216,13 @@
   <div class="status-atualizacao">
     <span class="dot"></span>
     <span id="atualizadoEm">—</span>
+    <button id="btnAtualizar" title="Atualizar agora">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+    </button>
   </div>
 </header>
 <div class="faixa"></div>
@@ -300,7 +326,7 @@
 </main>
 
 <footer>
-  Atualiza automaticamente a cada carregamento · dados consolidados via Apps Script
+  Atualiza sozinho a cada 3 minutos · dados consolidados via Apps Script
   <div class="credito">Criado por Marcelo Giumarães — Eng. Produção · Suporte Operacional</div>
 </footer>
 
@@ -308,10 +334,23 @@
   // Cole aqui a URL do Web App publicado (Implantar > Nova implantação > App da Web)
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMvnsb37M2hi4f3wS2egsFUYMzvnVy1Cfed8mIFiJV5LgXP17MczVdnDRINR1K6zn3/exec";
 
+  const INTERVALO_AUTO_ATUALIZACAO_MS = 3 * 60 * 1000; // 3 minutos
+
   const UNIDADES = {
     tempoMedioAtendimentoDias: "dias",
     mediaVelocidadeExaustaoFiltro: "m/s"
   };
+
+  const CAMPOS = [
+    "osTercerizadosConcluidas", "osInternasConcluidas", "tempoMedioAtendimentoDias",
+    "aceitesEPI", "notificacoesEnviadas", "ocorrenciasRegistradas",
+    "carteirinhasFeitas", "lojasAtivas",
+    "lojasCondOtimo", "lojasCondSatisfatorio", "lojasCondRegular", "lojasCondNaoSatisfatorio",
+    "mediaVelocidadeExaustaoFiltro",
+    "campanhasEmAndamento", "campanhasConcluidasAno"
+  ];
+
+  let carregando = false;
 
   function renderFlap(elementId, valor, atraso) {
     const container = document.getElementById(elementId);
@@ -332,37 +371,55 @@
     }
   }
 
-  async function carregarDados() {
+  /**
+   * Carrega os dados do painel.
+   * @param {boolean} forcarAtualizacao - se true, ignora o cache do Apps Script
+   *   (usado no botão de atualizar manual) e evita cache do próprio navegador.
+   */
+  async function carregarDados(forcarAtualizacao) {
+    if (carregando) return; // evita cliques repetidos empilhando requisições
+    carregando = true;
+
+    const btn = document.getElementById("btnAtualizar");
+    const dot = document.querySelector(".dot");
+    btn.classList.add("girando");
+
     try {
-      const resp = await fetch(APPS_SCRIPT_URL);
+      let url = APPS_SCRIPT_URL;
+      if (forcarAtualizacao) {
+        url += (url.includes("?") ? "&" : "?") + "nocache=1&_=" + Date.now();
+      }
+
+      const resp = await fetch(url, { cache: "no-store" });
       if (!resp.ok) throw new Error("Falha na resposta do Apps Script");
       const dados = await resp.json();
+
+      document.getElementById("erroBox").style.display = "none";
+      dot.classList.add("ok");
 
       document.getElementById("mesReferencia").textContent =
         "Indicadores de " + dados.mesReferencia;
       document.getElementById("atualizadoEm").textContent =
         "Atualizado às " + new Date(dados.atualizadoEm).toLocaleTimeString("pt-BR");
 
-      const campos = [
-        "osTercerizadosConcluidas", "osInternasConcluidas", "tempoMedioAtendimentoDias",
-        "aceitesEPI", "notificacoesEnviadas", "ocorrenciasRegistradas",
-        "carteirinhasFeitas", "lojasAtivas",
-        "lojasCondOtimo", "lojasCondSatisfatorio", "lojasCondRegular", "lojasCondNaoSatisfatorio",
-        "mediaVelocidadeExaustaoFiltro",
-        "campanhasEmAndamento", "campanhasConcluidasAno"
-      ];
-
-      campos.forEach((campo, i) => {
+      CAMPOS.forEach((campo, i) => {
         renderFlap(campo, dados[campo] ?? 0, i * 0.06);
       });
 
     } catch (err) {
       document.getElementById("erroBox").style.display = "block";
+      dot.classList.remove("ok");
       console.error(err);
+    } finally {
+      carregando = false;
+      btn.classList.remove("girando");
     }
   }
 
-  carregarDados();
+  document.getElementById("btnAtualizar").addEventListener("click", () => carregarDados(true));
+
+  carregarDados(false);
+  setInterval(() => carregarDados(false), INTERVALO_AUTO_ATUALIZACAO_MS);
 </script>
 
 </body>
